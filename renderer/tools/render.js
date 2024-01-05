@@ -1,10 +1,13 @@
+import patch from "../patch/index";
+import unmount from "./unmount";
+
 /**
  *渲染
- *
- * @export
- * @param {*} vnode
- * @param {*} container
- */
+*
+* @export
+* @param {*} vnode 待渲染的节点
+* @param {*} container 容器
+*/
 export default function (vnode, container) {
   if (vnode) {
     // 存在新vnode

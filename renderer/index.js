@@ -1,8 +1,12 @@
-// 渲染器
+import render from "./tools/render";
+/**
+ * 创建渲染器
+ *
+ * @return {*}
+ */
 function createRenderer() {
   return {
     render,
-    hydrate,
   };
 }
 
@@ -23,8 +27,10 @@ const container = {
 };
 const renderer = createRenderer();
 // 首次渲染 挂载
-renderer.render(vnode1, document.querySeelct("#app"));
+// renderer.render(vnode, document.querySeelct("#app"));
 // 第二次渲染 打补丁
-renderer.render(vnode2, document.querySeelct("#app"));
+// renderer.render(vnode2, document.querySeelct("#app"));
 // 第三次渲染 卸载
-renderer.render(null, document.querySeelct("#app"));
+// renderer.render(null, document.querySeelct("#app"));
+
+renderer.render(vnode, container);

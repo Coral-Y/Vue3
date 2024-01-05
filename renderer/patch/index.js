@@ -1,4 +1,8 @@
 import { insert, createText, setText } from "../tools/domOpertion";
+import unmount from "../tools/unmount";
+import mountElement from "../tools/mountElement";
+import patchElement from "./tools/patchElement";
+import patchChildren from "./tools/patchChildren";
 
 const Text = Symbol(); // 文本节点的type标识
 const Fragment = Symbol(); // 多根节点模板的type标识

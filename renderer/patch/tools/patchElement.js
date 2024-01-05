@@ -1,12 +1,13 @@
 import patchChildren from "./patchChildren";
+import { patchProps } from "../../tools/domOpertion";
 
 /**
  *更新节点
- *
- * @export
- * @param {*} n1
- * @param {*} n2
- */
+*
+* @export
+* @param {*} n1 旧节点
+* @param {*} n2 新节点
+*/
 export default function (n1, n2) {
   const el = (n2.el = n1.el);
   const oldProps = n1.props;
