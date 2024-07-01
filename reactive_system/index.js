@@ -15,7 +15,10 @@ function track(target, key) {
     if(!deps) {
         depsMap.set(key, (deps = new Set()))
     }
+    // 把当前激活的副作用函数添加到依赖集合deps中
     deps.add(activeEffect)
+    // deps就是一个与当前副作用函数存在联系的依赖集合
+    activeEffect.deps.push(deps)
 }
 
 // 在 set 拦截函数内调用 trigger 函数触发变化
@@ -25,12 +28,25 @@ function trigger(target, key) {
     if(!depsMap) return
     // 根据key取得所有副作用函数effects
     const effects = depsMap.get(key)
+
     // 把副作用函数从桶里取出来执行
-    effects && effects.forEach(fn => fn())
+    const effectsToRun = new Set(effects)
+    effectsToRun.forEach(effectFn => effectFn())
+}
+
+function cleanup(effectFn) {
+    for (let i = 0; i < effectFn.deps.length; i++) {
+        // deps是依赖集合
+        const deps = effectFn.deps[i]
+        // 将effectFn从依赖集合中移除
+        deps.delete(effectFn)
+    }
+    // 重置effectFn.deps
+    effectFn.deps.length = 0
 }
 
 // 原始数据
-const data = { text: 'hello world' }
+const data = { text: 'hello world', ok: true }
 // 对原始数据的代理
 const obj = new Proxy(data, {
     // 拦截读取操作
@@ -58,18 +74,27 @@ const obj = new Proxy(data, {
 let activeEffect
 // 注册副作用函数
 function effect(fn) {
-    // 当调用effect注册副作用函数时，将副作用函数fn赋值给activeEffect
-    activeEffect = fn
-    // 执行副作用函数
-    fn()
+    const effectFn = () => {
+        // 调用cleanup函数完成清除工作
+        cleanup(effectFn)
+        // 当调用effect注册副作用函数时，将副作用函数fn赋值给activeEffect
+        activeEffect = effectFn
+        fn()
+    }
+    // activeEffect.deps用来存储所有与该副作用函数相关联的依赖集合
+    effectFn.deps = []
+    // 执行副作用函数 
+    effectFn()
 }
 
 effect(() => {
     let a
-    a = obj.text
+    a = obj.ok ? obj.text : 'not'
     console.log(a)
 })
 
 setTimeout(() => {
-    obj.noExist = 'hello vue3'
+    obj.text = 'hello cookie'
+    obj.ok = false
+    obj.text = 'hello coral'
 }, 1000)
