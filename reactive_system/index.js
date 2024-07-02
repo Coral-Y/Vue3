@@ -46,7 +46,7 @@ function cleanup(effectFn) {
 }
 
 // 原始数据
-const data = { text: 'hello world', ok: true }
+const data = { foo: true, bar: true}
 // 对原始数据的代理
 const obj = new Proxy(data, {
     // 拦截读取操作
@@ -70,8 +70,11 @@ const obj = new Proxy(data, {
     }
 })
 
-// 用一个全局变量存储被注册的副作用函数 不需要硬编码副作用函数的名字(effect)
+// 用一个全局变量存储当前激活的effect函数 不需要硬编码副作用函数的名字(effect)
 let activeEffect
+// effect栈
+const effectStack = []
+
 // 注册副作用函数
 function effect(fn) {
     const effectFn = () => {
@@ -79,7 +82,12 @@ function effect(fn) {
         cleanup(effectFn)
         // 当调用effect注册副作用函数时，将副作用函数fn赋值给activeEffect
         activeEffect = effectFn
+        // 在调用副作用函数之前将当前副作用函数压入栈中
+        effectStack.push(effectFn)
         fn()
+        // 执行完毕后，将当前副作用函数弹出栈，并还原为之前的值
+        effectStack.pop()
+        activeEffect = effectStack[effectStack.length - 1]
     }
     // activeEffect.deps用来存储所有与该副作用函数相关联的依赖集合
     effectFn.deps = []
@@ -87,14 +95,18 @@ function effect(fn) {
     effectFn()
 }
 
-effect(() => {
-    let a
-    a = obj.ok ? obj.text : 'not'
-    console.log(a)
+let temp1, temp2
+effect(function effectFn1() {
+    console.log('effectFn1执行')
+
+    effect(function effectFn2() {
+        console.log('effectFn2执行')
+        temp2 = obj.bar
+    })
+
+    temp1 = obj.foo
 })
 
 setTimeout(() => {
-    obj.text = 'hello cookie'
-    obj.ok = false
-    obj.text = 'hello coral'
+    obj.bar = false
 }, 1000)
