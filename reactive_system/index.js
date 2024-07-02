@@ -37,7 +37,14 @@ function trigger(target, key) {
             effectsToRun.add(effectFn)
         }
     })
-    effectsToRun.forEach(effectFn => effectFn())
+    effectsToRun.forEach(effectFn => {
+        // 如果存在调度器，则调用该调度器，并将副作用函数作为参数
+        if (effectFn.options.scheduler) {
+            effectFn.options.scheduler(effectFn)
+        } else {
+            effectFn()
+        }
+    })
 }
 
 function cleanup(effectFn) {
@@ -82,7 +89,7 @@ let activeEffect
 const effectStack = []
 
 // 注册副作用函数
-function effect(fn) {
+function effect(fn, options = {}) {
     const effectFn = () => {
         // 调用cleanup函数完成清除工作
         cleanup(effectFn)
@@ -95,19 +102,21 @@ function effect(fn) {
         effectStack.pop()
         activeEffect = effectStack[effectStack.length - 1]
     }
+    // 挂载
+    effectFn.options = options
     // activeEffect.deps用来存储所有与该副作用函数相关联的依赖集合
     effectFn.deps = []
     // 执行副作用函数 
     effectFn()
 }
 
-let temp1, temp2
-effect(function effectFn1() {
-    console.log('effectFn1执行')
-
-    temp1 = obj.foo
+effect(() => {
+    console.log(obj.foo)
+}, {
+    scheduler(fn) {
+        setTimeout(fn)
+    }
 })
 
-setTimeout(() => {
-    obj.foo++
-}, 1000)
+obj.foo++
+console.log('结束了')
