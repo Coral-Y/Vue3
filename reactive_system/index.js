@@ -1,8 +1,11 @@
+import computed from "./computed"
+import watch  from "./watch"
+
 // 存储副作用函数的桶 建立副作用函数与被操作的字段之间的联系
 const bucket = new WeakMap()
 
 // 在 get 拦截函数内调用 track 函数追踪变化
-function track(target, key) {
+export const track = (target, key) => {
     if (!activeEffect) return
     let depsMap = bucket.get(target)
     //  如果不存在，则新建一个Map并与target关联
@@ -22,7 +25,7 @@ function track(target, key) {
 }
 
 // 在 set 拦截函数内调用 trigger 函数触发变化
-function trigger(target, key) {
+export const trigger = (target, key) => {
     // 根据target从桶中取得depsMap
     const depsMap = bucket.get(target)
     if(!depsMap) return
@@ -89,7 +92,7 @@ let activeEffect
 const effectStack = []
 
 // 注册副作用函数
-function effect(fn, options = {}) {
+export const effect = (fn, options = {}) => {
     const effectFn = () => {
         // 调用cleanup函数完成清除工作
         cleanup(effectFn)
@@ -115,90 +118,6 @@ function effect(fn, options = {}) {
     return effectFn
 }
 
-// 计算属性
-function computed(getter) {
-    // 缓存上一次计算的值
-    let value
-    // 标识是否需要重新计算值
-    let dirty = true
-
-    // 把getter作为副作用函数，创建一个lazy的effect
-    const effectFn = effect(getter, { 
-        lazy: true,
-        scheduler() {
-            if (!dirty) {
-                dirty = true
-                // 当计算属性依赖的响应式数据变化时，手动触发响应
-                trigger(obj, 'value')
-            }
-        }
-    })
-
-    const obj = {
-        get value() {
-            if (dirty) {
-                value = effectFn()
-                dirty = false
-            }
-            // 当读取value时，手动调用track函数进行追踪
-            track(obj, 'value')
-            return value
-        }
-    }
-
-    return obj
-}
-
-// watch
-function watch(source, cb, options = {}) {
-    let getter
-
-    if (typeof source === 'function') {
-        getter = source
-    } else {
-        getter = () => traverse(source)
-    }
-
-    let oldValue, newValue
-
-    const job = () => {
-        // 在scheduler中重新执行副作用函数，得到的是新值
-        newValue = effectFn()
-        // 数据发生变化时，调用回调函数
-        cb(newValue, oldValue)
-        // 更新旧值
-        oldValue = newValue
-    }
-    
-    // 开启lazy选项，并把返回值存储到effectFn中以便后续手动调用
-    const effectFn = effect(
-        () => getter(),
-        {
-            scheduler: job,
-            lazy: true
-        }
-    )
-
-    if (options.immediate) {
-        job()
-    } else {
-        // 手动调用副作用函数，拿到的值就是旧值
-        oldValue = effectFn()
-    }
-}
-
-function traverse(value, seen = new Set()) {
-    // 如果要读取的数据是原始值，或者已经被读取过了，则什么都不错
-    if(typeof value !== 'object' || value === null || seen.has(value)) {
-        return
-    }
-    // 将数据添加到seen，代表遍历地读取过了，避免死循环
-    seen.add(value)
-    for (const k in value) {
-        traverse(value[k], seen)
-    }
-    return value
-}
 
 watch(
     () => obj.foo, 
@@ -210,4 +129,7 @@ watch(
     }
 )
 
-obj.foo++
+const sum = computed(() => obj.bar + obj.foo)
+console.log(sum.value)
+console.log(sum.value)
+console.log(sum.value)
