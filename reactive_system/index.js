@@ -59,7 +59,7 @@ function cleanup(effectFn) {
 }
 
 // 原始数据
-const data = { foo: 1, bar: true}
+const data = { foo: 1, bar: 1}
 // 对原始数据的代理
 const obj = new Proxy(data, {
     // 拦截读取操作
@@ -97,26 +97,67 @@ function effect(fn, options = {}) {
         activeEffect = effectFn
         // 在调用副作用函数之前将当前副作用函数压入栈中
         effectStack.push(effectFn)
-        fn()
+        const res = fn()
         // 执行完毕后，将当前副作用函数弹出栈，并还原为之前的值
         effectStack.pop()
         activeEffect = effectStack[effectStack.length - 1]
+        return res
     }
     // 挂载
     effectFn.options = options
     // activeEffect.deps用来存储所有与该副作用函数相关联的依赖集合
     effectFn.deps = []
-    // 执行副作用函数 
-    effectFn()
+    if (!options.lazy) {
+        // 执行副作用函数 
+        effectFn()
+    }
+    // 将副作用函数作为返回值返回
+    return effectFn
 }
 
-effect(() => {
-    console.log(obj.foo)
-}, {
-    scheduler(fn) {
-        setTimeout(fn)
+function computed(getter) {
+    // 缓存上一次计算的值
+    let value
+    // 标识是否需要重新计算值
+    let dirty = true
+
+    // 把getter作为副作用函数，创建一个lazy的effect
+    const effectFn = effect(getter, { 
+        lazy: true,
+        scheduler() {
+            if (!dirty) {
+                dirty = true
+                // 当计算属性依赖的响应式数据变化时，手动触发响应
+                trigger(obj, 'value')
+            }
+        }
+    })
+
+    const obj = {
+        get value() {
+            if (dirty) {
+                value = effectFn()
+                dirty = false
+            }
+            // 当读取value时，手动调用track函数进行追踪
+            track(obj, 'value')
+            return value
+        }
     }
-})
+
+    return obj
+}
+
+
+const sumRes = computed(() => obj.foo + obj.bar)
+
+console.log(sumRes.value)
+console.log('结束了', sumRes.value)
+
 
 obj.foo++
-console.log('结束了')
+console.log(sumRes.value)
+
+effect(() => {
+    console.log('dsads', sumRes.value)
+})
