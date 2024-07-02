@@ -30,7 +30,13 @@ function trigger(target, key) {
     const effects = depsMap.get(key)
 
     // 把副作用函数从桶里取出来执行
-    const effectsToRun = new Set(effects)
+    const effectsToRun = new Set()
+    effects && effects.forEach(effectFn => {
+        // 如果触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
+        if (effects !== activeEffect) {
+            effectsToRun.add(effectFn)
+        }
+    })
     effectsToRun.forEach(effectFn => effectFn())
 }
 
@@ -46,7 +52,7 @@ function cleanup(effectFn) {
 }
 
 // 原始数据
-const data = { foo: true, bar: true}
+const data = { foo: 1, bar: true}
 // 对原始数据的代理
 const obj = new Proxy(data, {
     // 拦截读取操作
@@ -99,14 +105,9 @@ let temp1, temp2
 effect(function effectFn1() {
     console.log('effectFn1执行')
 
-    effect(function effectFn2() {
-        console.log('effectFn2执行')
-        temp2 = obj.bar
-    })
-
     temp1 = obj.foo
 })
 
 setTimeout(() => {
-    obj.bar = false
+    obj.foo++
 }, 1000)
