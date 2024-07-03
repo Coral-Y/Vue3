@@ -1,7 +1,7 @@
 import {  track, trigger, ITERATE_KEY } from './index'
 
 // 封装createReactive函数，接收一个参数isShallow,代表是否为浅响应
-const createReactive = (obj, isShallow = false) => {
+const createReactive = (obj, isShallow = false, isReadOnly = false) => {
     return new Proxy(obj, {    
         // 拦截读取操作
         get(target, key, receiver) {
@@ -13,8 +13,10 @@ const createReactive = (obj, isShallow = false) => {
             // 得到原始值结果
             const res = Reflect.get(target, key, receiver)
 
-            // 将副作用函数activeEffect添加到存储副作用函数的桶中
-            track(target, key)
+            if (!isReadOnly) {
+                // 将副作用函数activeEffect添加到存储副作用函数的桶中
+                track(target, key)
+            }
 
             // 如果是浅响应，则直接返回原始值
             if (isShallow) {
@@ -23,7 +25,7 @@ const createReactive = (obj, isShallow = false) => {
 
             if (typeof res === 'object' && res !== null) {
                 // 调用reactive将结果包装成响应式数据并返回
-                return reactive(res)
+                return isReadOnly ? readOnly(res) : reactive(res)
             }
 
             // 返回属性值
@@ -31,6 +33,10 @@ const createReactive = (obj, isShallow = false) => {
         },
         // 拦截设置操作
         set(target, key, newVal, receiver) {
+            if (isReadOnly) {
+                console.log(`属性${key}是只读的`)
+                return true
+            }
             // 先获取旧值
             const oldVal = target[key]
 
@@ -69,6 +75,10 @@ const createReactive = (obj, isShallow = false) => {
         },
         // 拦截删除操作
         deleteProperty(target, key) {
+            if (isReadOnly) {
+                console.log(`属性${key}是只读的`)
+                return true
+            }
             // 检测被操作的属性是否是对象自己的属性
             const hadKey = Object.prototype.hasOwnProperty.call(target, key)
             
@@ -90,3 +100,11 @@ export const reactive = (obj) => {
 export const shallowReactive = (obj) => {
     return createReactive(obj, true)
 } 
+
+export const readOnly = (obj) => {
+    return createReactive(obj, false, true)
+}
+
+export const shallowReadonly = (obj) => {
+    return createReactive(obj, true, true)
+}
