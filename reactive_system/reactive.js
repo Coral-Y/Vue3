@@ -1,6 +1,7 @@
 import {  track, trigger, ITERATE_KEY } from './index'
 
-const reactive = (obj) => {
+// 封装createReactive函数，接收一个参数isShallow,代表是否为浅响应
+const createReactive = (obj, isShallow = false) => {
     return new Proxy(obj, {    
         // 拦截读取操作
         get(target, key, receiver) {
@@ -8,11 +9,25 @@ const reactive = (obj) => {
             if (key === 'raw') {
                 return target
             }
+
+            // 得到原始值结果
+            const res = Reflect.get(target, key, receiver)
+
             // 将副作用函数activeEffect添加到存储副作用函数的桶中
             track(target, key)
 
+            // 如果是浅响应，则直接返回原始值
+            if (isShallow) {
+                return res
+            }
+
+            if (typeof res === 'object' && res !== null) {
+                // 调用reactive将结果包装成响应式数据并返回
+                return reactive(res)
+            }
+
             // 返回属性值
-            return Reflect.get(target, key, receiver)
+            return res
         },
         // 拦截设置操作
         set(target, key, newVal, receiver) {
@@ -68,4 +83,10 @@ const reactive = (obj) => {
     })
 }
 
-export default reactive
+export const reactive = (obj) => {
+    return createReactive(obj)
+}
+
+export const shallowReactive = (obj) => {
+    return createReactive(obj, true)
+} 
