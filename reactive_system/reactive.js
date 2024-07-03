@@ -4,6 +4,10 @@ const reactive = (obj) => {
     return new Proxy(obj, {    
         // 拦截读取操作
         get(target, key, receiver) {
+            // 代理对象可以通过 raw 属性访问原始数据
+            if (key === 'raw') {
+                return target
+            }
             // 将副作用函数activeEffect添加到存储副作用函数的桶中
             track(target, key)
 
@@ -21,10 +25,12 @@ const reactive = (obj) => {
             // 设置属性值
             const res = Reflect.set(target, key, newVal, receiver)
 
-            // 比较新值与旧值，不全等的时候才触发响应
-            if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
-                // 把副作用函数从桶里取出并执行
-                trigger(target, key, type)
+            if (target === receiver.raw) {
+                // 比较新值与旧值，不全等的时候才触发响应
+                if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
+                    // 把副作用函数从桶里取出并执行
+                    trigger(target, key, type)
+                }
             }
 
             // 返回true表示设置操作成功

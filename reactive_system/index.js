@@ -75,11 +75,6 @@ function cleanup(effectFn) {
     effectFn.deps.length = 0
 }
 
-// 原始数据
-const data = { foo: 1, bar: 1}
-// 对原始数据的代理
-const obj = reactive(data)
-
 // 用一个全局变量存储当前激活的effect函数 不需要硬编码副作用函数的名字(effect)
 let activeEffect
 // effect栈
@@ -124,11 +119,17 @@ export const effect = (fn, options = {}) => {
 
 // const sum = computed(() => obj.bar + obj.foo)
 
+
+// 原始数据
+const obj = {}
+const proto = { bar: 1 }
+const child = reactive(obj)
+const parent = reactive(proto)
+
+Object.setPrototypeOf(child, parent)
+
 effect(() => {
-    console.log('数据修改了')
-    for(const key in obj) {
-        console.log(key)
-    }
+    console.log(child.bar)
 })
 
-obj.foo = 2
+child.bar = 2
