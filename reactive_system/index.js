@@ -1,8 +1,10 @@
 import computed from "./computed"
 import watch  from "./watch"
+import reactive from "./reactive"
 
 // 存储副作用函数的桶 建立副作用函数与被操作的字段之间的联系
 const bucket = new WeakMap()
+export const ITERATE_KEY = Symbol()
 
 // 在 get 拦截函数内调用 track 函数追踪变化
 export const track = (target, key) => {
@@ -25,7 +27,7 @@ export const track = (target, key) => {
 }
 
 // 在 set 拦截函数内调用 trigger 函数触发变化
-export const trigger = (target, key) => {
+export const trigger = (target, key, type) => {
     // 根据target从桶中取得depsMap
     const depsMap = bucket.get(target)
     if(!depsMap) return
@@ -34,12 +36,24 @@ export const trigger = (target, key) => {
 
     // 把副作用函数从桶里取出来执行
     const effectsToRun = new Set()
+    // 将与 key 相关联的副作用函数添加到 effectsToRun
     effects && effects.forEach(effectFn => {
         // 如果触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
-        if (effects !== activeEffect) {
+        if (effectFn !== activeEffect) {
             effectsToRun.add(effectFn)
         }
     })
+    if (type === 'ADD' || type === 'DELETE') {
+        // 取得与 ITERATE_KEY 相关联的副作用函数
+        const iterateEffects = depsMap.get(ITERATE_KEY)
+        // 将与 ITERATE_KEY 相关联的副作用函数也添加到 effectsToRun
+        iterateEffects && iterateEffects.forEach(effectFn => {
+            // 如果触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
+            if (effectFn !== activeEffect) {
+                effectsToRun.add(effectFn)
+            }
+        })
+    }
     effectsToRun.forEach(effectFn => {
         // 如果存在调度器，则调用该调度器，并将副作用函数作为参数
         if (effectFn.options.scheduler) {
@@ -64,27 +78,7 @@ function cleanup(effectFn) {
 // 原始数据
 const data = { foo: 1, bar: 1}
 // 对原始数据的代理
-const obj = new Proxy(data, {
-    // 拦截读取操作
-    get(target, key) {
-        // 将副作用函数activeEffect添加到存储副作用函数的桶中
-        track(target, key)
-
-        // 返回属性值
-        return target[key]
-    },
-    // 拦截设置操作
-    set(target, key, newVal) {
-        // 设置属性值
-        target[key] = newVal
-
-        // 把副作用函数从桶里取出并执行
-        trigger(target, key)
-
-        // 返回true表示设置操作成功
-        return true
-    }
-})
+const obj = reactive(data)
 
 // 用一个全局变量存储当前激活的effect函数 不需要硬编码副作用函数的名字(effect)
 let activeEffect
@@ -118,18 +112,23 @@ export const effect = (fn, options = {}) => {
     return effectFn
 }
 
+// watch(
+//     () => obj.foo, 
+//     (newValue, oldValue) => {
+//         console.log('数据变化了', newValue, oldValue)
+//     },
+//     {
+//         immediate: true
+//     }
+// )
 
-watch(
-    () => obj.foo, 
-    (newValue, oldValue) => {
-        console.log('数据变化了', newValue, oldValue)
-    },
-    {
-        immediate: true
+// const sum = computed(() => obj.bar + obj.foo)
+
+effect(() => {
+    console.log('数据修改了')
+    for(const key in obj) {
+        console.log(key)
     }
-)
+})
 
-const sum = computed(() => obj.bar + obj.foo)
-console.log(sum.value)
-console.log(sum.value)
-console.log(sum.value)
+obj.foo = 2
