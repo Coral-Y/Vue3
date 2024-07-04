@@ -149,12 +149,11 @@ export const effect = (fn, options = {}) => {
 
 
 // 原始数据
-const child = reactive(['foo','bar'])
+const obj = {}
+const child = reactive([obj])
 
 
 effect(() => {
-    console.log(child.includes('foo'))
+    console.log(child.includes(obj))
 })
 
-
-child[0] = 1

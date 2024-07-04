@@ -1,5 +1,21 @@
 import {  track, trigger, ITERATE_KEY } from './index'
 
+const arrayInstrumentations = {}
+
+;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
+    const originMethod = Array.prototype[method]
+    arrayInstrumentations[method] = function(...args) {
+        // this是代理对象，先在代理对象中查找，将结果存储到res中
+        let res = originMethod.apply(this, args)
+
+        if (res === false) {
+            res = originMethod.apply(this.raw, args)
+        }
+
+        return res
+    }
+})
+
 // 封装createReactive函数，接收一个参数isShallow,代表是否为浅响应
 const createReactive = (obj, isShallow = false, isReadOnly = false) => {
     return new Proxy(obj, {    
@@ -8,6 +24,10 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
             // 代理对象可以通过 raw 属性访问原始数据
             if (key === 'raw') {
                 return target
+            }
+
+            if( Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
+                return Reflect.get(arrayInstrumentations, key, receiver)
             }
 
             // 得到原始值结果
@@ -97,8 +117,19 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
     })
 }
 
+// 定义一个Map实例，存储原始对象到代理对象的映射
+const reactiveMap = new Map()
+
 export const reactive = (obj) => {
-    return createReactive(obj)
+    // 是否已存在原始对象obj的代理对象
+    const existProxy = reactiveMap.get(obj)
+    // 存在则直接返回
+    if (existProxy) return existProxy
+    // 不存在则创建新的代理对象
+    const proxy = createReactive(obj)
+    // 存储到map中，避免重复创建
+    reactiveMap.set(obj, proxy)
+    return proxy
 }
 
 export const shallowReactive = (obj) => {
