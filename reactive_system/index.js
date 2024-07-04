@@ -27,7 +27,7 @@ export const track = (target, key) => {
 }
 
 // 在 set 拦截函数内调用 trigger 函数触发变化
-export const trigger = (target, key, type) => {
+export const trigger = (target, key, type, newVal) => {
     // 根据target从桶中取得depsMap
     const depsMap = bucket.get(target)
     if(!depsMap) return
@@ -43,6 +43,34 @@ export const trigger = (target, key, type) => {
             effectsToRun.add(effectFn)
         }
     })
+
+    // 如果操作目标是数组，并且修改了数组的 length 属性
+    if (Array.isArray(target) && key === 'length') {
+        // 对于索引大于或等于新的length值的元素，需要把所有相关联的副作用函数取出并添加到effectsToRun中待执行
+        depsMap.forEach((effects, index) => {
+            if (index >= newVal) {
+                effects.forEach(effectFn => {
+                    if (effectFn !== activeEffect) {
+                        effectsToRun.add(effectFn)
+                    }
+                })
+            }
+        })
+    }
+
+    // 当操作类型是ADD且目标对象是数组时，应该取出并执行与length属性相关联的副作用函数
+    if (type === 'ADD' && Array.isArray(target)) {
+        // 取出与length相关联的副作用函数
+        const lengthEffects = depsMap.get('length')
+        // 将这些副作用函数添加到effectsToRun中，待执行
+        lengthEffects && lengthEffects.forEach(effectFn => {
+            // 如果触发执行的副作用函数与当前正在执行的副作用函数相同，则不触发执行
+            if (effectFn !== activeEffect) {
+                effectsToRun.add(effectFn)
+            }
+        })
+    }
+
     if (type === 'ADD' || type === 'DELETE') {
         // 取得与 ITERATE_KEY 相关联的副作用函数
         const iterateEffects = depsMap.get(ITERATE_KEY)
@@ -121,12 +149,12 @@ export const effect = (fn, options = {}) => {
 
 
 // 原始数据
-const obj = { bar: { foo: 1 } }
-const child = shallowReadonly(obj)
+const child = reactive(['foo','bar'])
 
 
 effect(() => {
-    console.log(child.bar.foo)
+    console.log(child.includes('foo'))
 })
 
-child.bar.foo = 2
+
+child[0] = 1

@@ -13,7 +13,8 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
             // 得到原始值结果
             const res = Reflect.get(target, key, receiver)
 
-            if (!isReadOnly) {
+            // 添加判断，如果 key 的类型是 symbol，则不进行追踪
+            if (!isReadOnly && typeof key !== 'symbol') {
                 // 将副作用函数activeEffect添加到存储副作用函数的桶中
                 track(target, key)
             }
@@ -41,7 +42,10 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
             const oldVal = target[key]
 
             // 如果属性不存在，则说明是在添加新属性，否则是设置已有属性
-            const type = Object.prototype.hasOwnProperty.call(target, key) ? 'SET' : 'ADD'
+            const type = Array.isArray(target)
+            // 如果代理目标是数组，则检测被设置的索引值是否小于数组长度 
+            ? Number(key) < target.length ? 'SET' : 'ADD'
+            : Object.prototype.hasOwnProperty.call(target, key) ? 'SET' : 'ADD'
 
             // 设置属性值
             const res = Reflect.set(target, key, newVal, receiver)
@@ -50,7 +54,7 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
                 // 比较新值与旧值，不全等的时候才触发响应
                 if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
                     // 把副作用函数从桶里取出并执行
-                    trigger(target, key, type)
+                    trigger(target, key, type, newVal)
                 }
             }
 
@@ -68,7 +72,7 @@ const createReactive = (obj, isShallow = false, isReadOnly = false) => {
         // 拦截for...in循环操作
         ownKeys(target) {
             // 将副作用函数与 ITERATE_KEY 关联
-            track(target, ITERATE_KEY)
+            track(target, Array.isArray(target) ? 'length' : ITERATE_KEY)
 
             // 返回属性值
             return Reflect.ownKeys(target)
