@@ -1,7 +1,6 @@
-import {  track, trigger, ITERATE_KEY } from './index'
+import {  track, trigger, ITERATE_KEY  } from './index'
 
 const arrayInstrumentations = {}
-
 ;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
     const originMethod = Array.prototype[method]
     arrayInstrumentations[method] = function(...args) {
@@ -12,6 +11,22 @@ const arrayInstrumentations = {}
             res = originMethod.apply(this.raw, args)
         }
 
+        return res
+    }
+})
+
+// 代表是否进行追踪
+export let shouldTrack = true
+// 重写数组的方法
+;['push', 'pop', 'shift', 'unshift', 'splice'].forEach(method => {
+    // 取得原生方法
+    const originMethod = Array.prototype[method]
+    // 重写
+    arrayInstrumentations[method] = function(...args) {
+        // 调用之前禁止追踪
+        shouldTrack = false
+        let res = originMethod.apply(this, args)
+        shouldTrack = true
         return res
     }
 })

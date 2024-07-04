@@ -1,6 +1,6 @@
 import computed from "./computed"
 import watch  from "./watch"
-import { reactive, readOnly, shallowReactive, shallowReadonly } from "./reactive"
+import { reactive, shouldTrack, readOnly, shallowReactive, shallowReadonly } from "./reactive"
 
 // 存储副作用函数的桶 建立副作用函数与被操作的字段之间的联系
 const bucket = new WeakMap()
@@ -8,7 +8,7 @@ export const ITERATE_KEY = Symbol()
 
 // 在 get 拦截函数内调用 track 函数追踪变化
 export const track = (target, key) => {
-    if (!activeEffect) return
+    if (!activeEffect || !shouldTrack) return
     let depsMap = bucket.get(target)
     //  如果不存在，则新建一个Map并与target关联
     if (!depsMap) {
@@ -150,10 +150,15 @@ export const effect = (fn, options = {}) => {
 
 // 原始数据
 const obj = {}
-const child = reactive([obj])
+const child = reactive([])
 
 
 effect(() => {
-    console.log(child.includes(obj))
+    child.push(1)
 })
 
+effect(() => {
+    child.push(1)
+})
+
+console.log(child)
