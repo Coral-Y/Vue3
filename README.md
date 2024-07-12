@@ -1,10 +1,26 @@
+# usage
+1. 安装依赖
+``` shell
+npm install
+```
+
+2. 配置`package.json`的运行命令，指定运行文件
+``` json
+{
+  "scripts": {
+    "start": "npx babel-node reactive_system/index.js"
+  },
+}
+```
+
+3. 可以根据自己的需求，更改目录下的`index.js`文件中的示例内容
+
 # Vue3原理
 
 ## 响应系统 reactive system
-工作流程：
+工作原理：
 - 当**读取**操作发生时，将副作用函数收集到“桶”里
 - 当**设置**操作发生时，从“桶”中取出副作用函数并执行
-
 
 ## 渲染器 renderer
 渲染器的作用是：把虚拟DOM渲染为真实DOM

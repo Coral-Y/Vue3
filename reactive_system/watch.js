@@ -1,5 +1,6 @@
-import { effect } from './index'
+import { effect } from "./effect"
 
+// 侦听器
 const watch = (source, cb, options = {}) => {
     let getter
 

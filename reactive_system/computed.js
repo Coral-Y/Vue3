@@ -1,5 +1,6 @@
-import { effect, track, trigger } from './index'
+import { effect, track, trigger } from './effect'
 
+// 计算属性
 const computed = (getter) => {
     // 缓存上一次计算的值
     let value

@@ -1,4 +1,4 @@
-import {  track, trigger, ITERATE_KEY  } from './index'
+import {  track, trigger, ITERATE_KEY  } from './effect'
 
 const arrayInstrumentations = {}
 ;['includes', 'indexOf', 'lastIndexOf'].forEach(method => {

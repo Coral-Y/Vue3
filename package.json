@@ -4,7 +4,6 @@
   "description": "Vue3原理",
   "main": "reactive_system.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx prettier --write renderer/",
     "start": "npx babel-node reactive_system/index.js"
   },
