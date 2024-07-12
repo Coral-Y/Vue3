@@ -1,6 +1,7 @@
 import computed from "./computed"
 import watch  from "./watch"
 import { reactive, shouldTrack, readOnly, shallowReactive, shallowReadonly } from "./reactive"
+import { toRefs } from "./ref"
 
 // 存储副作用函数的桶 建立副作用函数与被操作的字段之间的联系
 const bucket = new WeakMap()
@@ -149,16 +150,7 @@ export const effect = (fn, options = {}) => {
 
 
 // 原始数据
-const obj = {}
-const child = reactive([])
-
-
-effect(() => {
-    child.push(1)
-})
-
-effect(() => {
-    child.push(1)
-})
-
-console.log(child)
+const obj = reactive({ foo: 1, bar: 2 })
+const newObj = { ...toRefs(obj) }
+console.log(newObj.foo.value)
+console.log(newObj.bar.value)
