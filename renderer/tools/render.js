@@ -8,7 +8,7 @@ import unmount from "./unmount";
  * @param {*} vnode 待渲染的节点
  * @param {*} container 容器
  */
-export default function (vnode, container) {
+const render = (vnode, container) => {
   if (vnode) {
     // 存在新vnode
     patch(container._vnode, vnode, container);
@@ -20,4 +20,15 @@ export default function (vnode, container) {
   }
   // 后续渲染中的旧vnode
   container._vnode = vnode;
+}
+
+/**
+ * 创建渲染器
+ *
+ * @return {*}
+ */
+export const createRenderer = () => {
+  return {
+    render,
+  };
 }

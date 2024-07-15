@@ -1,14 +1,4 @@
-import render from "./tools/render";
-/**
- * 创建渲染器
- *
- * @return {*}
- */
-function createRenderer() {
-  return {
-    render,
-  };
-}
+import {createRenderer} from "./tools/render";
 
 const vnode = {
   type: "h1",
@@ -34,3 +24,4 @@ const renderer = createRenderer();
 // renderer.render(null, document.querySeelct("#app"));
 
 renderer.render(vnode, container);
+console.log(container)

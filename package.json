@@ -5,7 +5,7 @@
   "main": "reactive_system.js",
   "scripts": {
     "lint": "npx prettier --write renderer/",
-    "start": "npx babel-node reactive_system/index.js"
+    "start": "npx babel-node renderer/index.js"
   },
   "author": "cookie-y",
   "license": "ISC",

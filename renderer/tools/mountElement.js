@@ -1,4 +1,4 @@
-import { setElementText, patchProps, insert } from "./domOpertion";
+import { setElementText, patchProps, insert, createElement } from "./domOpertion";
 import patch from "../patch/index";
 
 /**
@@ -13,7 +13,7 @@ export default function (vnode, container, anchor) {
   const el = (vnode.el = createElement(vnode.type));
 
   if (typeof vnode.children === "string") {
-    setElementText(vnode.children);
+    setElementText(el, vnode.children);
   } else if (Array.isArray(vnode.children)) {
     // 存在子节点
     vnode.children.forEach((child) => {

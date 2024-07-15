@@ -1,5 +1,6 @@
 // 创建元素
 export const createElement = (tag) => {
+  // return { tag }
   return document.createElement(tag);
 };
 
@@ -10,6 +11,7 @@ export const setElementText = (el, text) => {
 
 // 在指定的parent下添加指定元素
 export const insert = (el, parent, anchor = null) => {
+  // parent.children = el
   parent.insertBefore(el, anchor);
 };
 
